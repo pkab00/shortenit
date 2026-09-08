@@ -3,6 +3,7 @@ package link
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -42,8 +43,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(res)
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -62,8 +63,8 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(res)
 }
 
 func (h *Handler) All(w http.ResponseWriter, r *http.Request) {
@@ -80,8 +81,8 @@ func (h *Handler) All(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(res)
 }
 
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
@@ -94,10 +95,16 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	res, err := h.s.ByCode(ctx, code)
 	if err != nil {
 		log.Println("error getting record by code: ", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		switch {
+		case errors.Is(err, ErrorLinkNotFound):
+			http.Error(w, "Link Not Found", http.StatusNotFound)
+		default:
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 		return
 	}
 
 	link := res.Body
+	log.Println("redirecting to", link)
 	http.Redirect(w, r, link, http.StatusFound)
 }

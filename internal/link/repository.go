@@ -3,6 +3,7 @@ package link
 import (
 	"context"
 	"database/sql"
+	"errors"
 )
 
 type Repository interface {
@@ -79,6 +80,9 @@ func (r *PostgresRepository) ByID(ctx context.Context, id int) (*Link, error) {
 		QueryRowContext(ctx, query, id).
 		Scan(&res.ID, &res.Body, &res.CreatedAt)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrorLinkNotFound
+		}
 		return nil, err
 	}
 	return &res, nil
