@@ -2,6 +2,10 @@ package link
 
 import (
 	"context"
+	"log"
+	"net/url"
+
+	"github.com/pkab00/shortenit/pkg/encode"
 )
 
 type Service struct {
@@ -12,14 +16,49 @@ func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) Create(ctx context.Context, url string) (*LinkResponse, error) {
-	link, err := s.repo.Create(ctx, url)
-	return link.toResponse(), err
+func fixURL(url_str string) (*string, error) {
+	u, err := url.Parse(url_str)
+	if err != nil {
+		log.Println("error parsing URL: ", err)
+		return nil, err
+	}
+
+	if u.Scheme == "" {
+		u.Scheme = "https"
+	}
+	res := u.String()
+
+	return &res, nil
 }
 
-func (s *Service) Delete(ctx context.Context, url string) (*LinkResponse, error) {
-	link, err := s.repo.Delete(ctx, url)
-	return link.toResponse(), err
+func (s *Service) Create(ctx context.Context, url string) (*LinkResponse, error) {
+	var err error
+
+	fixedUrl, err := fixURL(url)
+	if err != nil {
+		return nil, err
+	}
+
+	link, err := s.repo.Create(ctx, *fixedUrl)
+	if err != nil {
+		return nil, err
+	}
+	return link.toResponse(), nil
+}
+
+func (s *Service) Delete(ctx context.Context, code string) (*LinkResponse, error) {
+	var err error
+
+	id, err := encode.NewDecoder().Decode(code)
+	if err != nil {
+		return nil, err
+	}
+
+	link, err := s.repo.Delete(ctx, *id)
+	if err != nil {
+		return nil, err
+	}
+	return link.toResponse(), nil
 }
 
 func (s *Service) All(ctx context.Context) ([]LinkResponse, error) {
@@ -34,4 +73,20 @@ func (s *Service) All(ctx context.Context) ([]LinkResponse, error) {
 		res = append(res, *link.toResponse())
 	}
 	return res, nil
+}
+
+func (s *Service) ByCode(ctx context.Context, code string) (*LinkResponse, error) {
+	var err error
+
+	id, err := encode.NewDecoder().Decode(code)
+	if err != nil {
+		return nil, err
+	}
+
+	link, err := s.repo.ByID(ctx, *id)
+	if err != nil {
+		return nil, err
+	}
+
+	return link.toResponse(), nil
 }

@@ -1,4 +1,4 @@
-package encoder
+package encode
 
 import (
 	"encoding/base64"
@@ -6,7 +6,7 @@ import (
 )
 
 type Encoder interface {
-	Encode() string
+	Encode(val uint64) string
 }
 
 type Base64Encoder struct{}

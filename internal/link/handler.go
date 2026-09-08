@@ -31,7 +31,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
 	res, err := h.s.Create(ctx, req.URL)
@@ -41,41 +41,35 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
-	var req LinkRequest
 	var err error
 
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		log.Println("error decoding delete request: ", err)
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
-	}
+	code := r.PathValue("code")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	res, err := h.s.Delete(ctx, req.URL)
+	res, err := h.s.Delete(ctx, code)
 	if err != nil {
 		log.Println("error deleting link: ", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) All(w http.ResponseWriter, r *http.Request) {
 	var err error
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
 	res, err := h.s.All(ctx)
@@ -85,7 +79,25 @@ func (h *Handler) All(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	code := r.PathValue("code")
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	res, err := h.s.ByCode(ctx, code)
+	if err != nil {
+		log.Println("error getting record by code: ", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	link := res.Body
+	http.Redirect(w, r, link, http.StatusFound)
 }

@@ -7,8 +7,9 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, url string) (*Link, error)
-	Delete(ctx context.Context, url string) (*Link, error)
+	Delete(ctx context.Context, id int) (*Link, error)
 	All(ctx context.Context) ([]Link, error)
+	ByID(ctx context.Context, id int) (*Link, error)
 }
 
 type PostgresRepository struct {
@@ -32,12 +33,12 @@ func (r *PostgresRepository) Create(ctx context.Context, url string) (*Link, err
 	return &res, nil
 }
 
-func (r *PostgresRepository) Delete(ctx context.Context, url string) (*Link, error) {
+func (r *PostgresRepository) Delete(ctx context.Context, id int) (*Link, error) {
 	var res Link
 
-	query := "DELETE FROM links WHERE link_body = $1 RETURNING *"
+	query := "DELETE FROM links WHERE link_id = $1 RETURNING *"
 	err := r.db.
-		QueryRowContext(ctx, query, url).
+		QueryRowContext(ctx, query, id).
 		Scan(&res.ID, &res.Body, &res.CreatedAt)
 	if err != nil {
 		return nil, err
@@ -68,4 +69,17 @@ func (r *PostgresRepository) All(ctx context.Context) ([]Link, error) {
 	}
 
 	return links, nil
+}
+
+func (r *PostgresRepository) ByID(ctx context.Context, id int) (*Link, error) {
+	var res Link
+
+	query := "SELECT * FROM links WHERE link_id = $1 LIMIT 1"
+	err := r.db.
+		QueryRowContext(ctx, query, id).
+		Scan(&res.ID, &res.Body, &res.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
