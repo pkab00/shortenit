@@ -8,6 +8,11 @@ import (
 	"github.com/pkab00/shortenit/pkg/encode"
 )
 
+type CreateResult struct {
+	Link    *LinkResponse
+	Created bool
+}
+
 type Service struct {
 	repo Repository
 }
@@ -31,7 +36,7 @@ func fixURL(url_str string) (*string, error) {
 	return &res, nil
 }
 
-func (s *Service) Create(ctx context.Context, url string) (*LinkResponse, error) {
+func (s *Service) Create(ctx context.Context, url string) (*CreateResult, error) {
 	var err error
 
 	fixedUrl, err := fixURL(url)
@@ -39,11 +44,22 @@ func (s *Service) Create(ctx context.Context, url string) (*LinkResponse, error)
 		return nil, err
 	}
 
+	foundByURL, _ := s.repo.ByURL(ctx, *fixedUrl)
+	if foundByURL != nil {
+		return &CreateResult{
+			Link:    foundByURL.toResponse(),
+			Created: false,
+		}, nil
+	}
+
 	link, err := s.repo.Create(ctx, *fixedUrl)
 	if err != nil {
 		return nil, err
 	}
-	return link.toResponse(), nil
+	return &CreateResult{
+		Link:    link.toResponse(),
+		Created: true,
+	}, nil
 }
 
 func (s *Service) Delete(ctx context.Context, code string) (*LinkResponse, error) {
