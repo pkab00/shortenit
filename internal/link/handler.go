@@ -7,18 +7,24 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/pkab00/shortenit/internal/redirect"
 )
 
 type Handler struct {
-	s *Service
+	linkService     *Service
+	redirectService *redirect.Service
 }
 
 type LinkRequest struct {
 	URL string `json:"url"`
 }
 
-func NewHandler(s *Service) *Handler {
-	return &Handler{s: s}
+func NewHandler(linkService *Service, redirectService *redirect.Service) *Handler {
+	return &Handler{
+		linkService:     linkService,
+		redirectService: redirectService,
+	}
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +41,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	res, err := h.s.Create(ctx, req.URL)
+	res, err := h.linkService.Create(ctx, req.URL)
 	if err != nil {
 		log.Println("error creating new link: ", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -59,7 +65,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	res, err := h.s.Delete(ctx, code)
+	res, err := h.linkService.Delete(ctx, code)
 	if err != nil {
 		log.Println("error deleting link: ", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -77,7 +83,7 @@ func (h *Handler) All(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	res, err := h.s.All(ctx)
+	res, err := h.linkService.All(ctx)
 	if err != nil {
 		log.Println("error getting links: ", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -96,7 +102,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	res, err := h.s.ByCode(ctx, code)
+	res, err := h.linkService.ByCode(ctx, code)
 	if err != nil {
 		log.Println("error getting record by code: ", err)
 		switch {
@@ -105,6 +111,13 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		default:
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
+		return
+	}
+
+	_, err = h.redirectService.Increment(ctx, code)
+	if err != nil {
+		log.Println("error incrementing redirect counter: ", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
