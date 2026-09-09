@@ -7,7 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"github.com/pkab00/shortenit/internal/database"
+	"github.com/pkab00/shortenit/internal/db"
 	"github.com/pkab00/shortenit/internal/link"
 )
 
@@ -16,7 +16,7 @@ func main() {
 		log.Println("No .env file found, using environment variables")
 	}
 
-	db, err := database.NewDB(os.Getenv("DB_URL"))
+	db, err := db.NewDB(os.Getenv("DB_URL"))
 	if err != nil {
 		log.Fatal(err)
 	}

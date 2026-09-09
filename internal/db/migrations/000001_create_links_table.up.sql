@@ -1,0 +1,5 @@
+CREATE TABLE links (
+	link_id SERIAL PRIMARY KEY,
+	link_body VARCHAR(1024) UNIQUE NOT NULL,
+	created_at TIMESTAMPTZ DEFAULT now()
+);
