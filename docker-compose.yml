@@ -17,6 +17,19 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
+  migrate:
+    image: migrate/migrate
+    container_name: shortenit-migrate
+    volumes:
+      - ./internal/db/migrations:/migrations
+    command:
+      - "-path=/migrations"
+      - "-database=postgres://postgres:postgres@database:5432/main?sslmode=disable"
+      - "up"
+    depends_on:
+      database:
+        condition: service_healthy
+
   api:
     container_name: shortenit-api
     build: .
@@ -25,8 +38,8 @@ services:
     environment:
       - DB_URL=postgres://postgres:postgres@database:5432/main?sslmode=disable
     depends_on:
-      database:
-        condition: service_healthy        
+      migrate:
+        condition: service_completed_successfully      
 
 volumes:
   db-data:
