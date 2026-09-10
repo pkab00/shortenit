@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/pkab00/shortenit/internal/apperr"
 )
 
 type Repository interface {
@@ -83,7 +85,7 @@ func (r *PostgresRepository) ByID(ctx context.Context, id int) (*Link, error) {
 		Scan(&res.ID, &res.Body, &res.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("get by id:", ErrorLinkNotFound)
+			return nil, fmt.Errorf("get by id:", apperr.ErrorLinkNotFound)
 		}
 		return nil, fmt.Errorf("get by id:", err)
 	}
@@ -99,7 +101,7 @@ func (r *PostgresRepository) ByURL(ctx context.Context, url string) (*Link, erro
 		Scan(&res.ID, &res.Body, &res.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("get by url:", ErrorLinkNotFound)
+			return nil, fmt.Errorf("get by url:", apperr.ErrorLinkNotFound)
 		}
 		return nil, fmt.Errorf("get by url:", err)
 	}

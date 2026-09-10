@@ -11,8 +11,8 @@ type Encoder interface {
 
 type Base64Encoder struct{}
 
-func NewEncoder() Base64Encoder {
-	return Base64Encoder{}
+func NewEncoder() *Base64Encoder {
+	return &Base64Encoder{}
 }
 
 func (e *Base64Encoder) Encode(val uint64) string {

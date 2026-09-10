@@ -8,22 +8,40 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkab00/shortenit/internal/apperr"
 	"github.com/pkab00/shortenit/internal/redirect"
+	"github.com/pkab00/shortenit/internal/statistics"
 )
 
 type Handler struct {
-	linkService     *Service
-	redirectService *redirect.Service
+	linkService       *Service
+	redirectService   *redirect.Service
+	statisticsService *statistics.Service
 }
 
 type LinkRequest struct {
 	URL string `json:"url"`
 }
 
-func NewHandler(linkService *Service, redirectService *redirect.Service) *Handler {
+func NewHandler(
+	linkService *Service,
+	redirectService *redirect.Service,
+	statisticsService *statistics.Service,
+) *Handler {
 	return &Handler{
-		linkService:     linkService,
-		redirectService: redirectService,
+		linkService:       linkService,
+		redirectService:   redirectService,
+		statisticsService: statisticsService,
+	}
+}
+
+func (h *Handler) handleServerError(w http.ResponseWriter, err error) {
+	log.Println("error getting record by code: ", err)
+	switch {
+	case errors.Is(err, apperr.ErrorLinkNotFound):
+		http.Error(w, "Link Not Found", http.StatusNotFound)
+	default:
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
@@ -104,13 +122,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.linkService.ByCode(ctx, code)
 	if err != nil {
-		log.Println("error getting record by code: ", err)
-		switch {
-		case errors.Is(err, ErrorLinkNotFound):
-			http.Error(w, "Link Not Found", http.StatusNotFound)
-		default:
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
+		h.handleServerError(w, err)
 		return
 	}
 
@@ -124,4 +136,22 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	link := res.Body
 	log.Println("redirecting to", link)
 	http.Redirect(w, r, link, http.StatusFound)
+}
+
+func (h *Handler) GetStatistics(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	code := r.PathValue("code")
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	res, err := h.statisticsService.Get(ctx, code)
+	if err != nil {
+		h.handleServerError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(res)
 }
