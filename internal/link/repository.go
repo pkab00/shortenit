@@ -28,10 +28,10 @@ func NewRepository(db *sql.DB) *PostgresRepository {
 func (r *PostgresRepository) Create(ctx context.Context, url string) (*Link, error) {
 	var res Link
 
-	query := "INSERT INTO links (link_body) VALUES ($1) RETURNING *"
+	query := "INSERT INTO links (url) VALUES ($1) RETURNING *"
 	err := r.db.
 		QueryRowContext(ctx, query, url).
-		Scan(&res.ID, &res.Body, &res.CreatedAt)
+		Scan(&res.ID, &res.URL, &res.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("create link:", err)
 	}
@@ -44,7 +44,7 @@ func (r *PostgresRepository) Delete(ctx context.Context, id int) (*Link, error) 
 	query := "DELETE FROM links WHERE link_id = $1 RETURNING *"
 	err := r.db.
 		QueryRowContext(ctx, query, id).
-		Scan(&res.ID, &res.Body, &res.CreatedAt)
+		Scan(&res.ID, &res.URL, &res.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("delete links:", err)
 	}
@@ -63,7 +63,7 @@ func (r *PostgresRepository) All(ctx context.Context) ([]Link, error) {
 
 	for rows.Next() {
 		var l Link
-		if err := rows.Scan(&l.ID, &l.Body, &l.CreatedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.URL, &l.CreatedAt); err != nil {
 			return nil, fmt.Errorf("get all links:", err)
 		}
 		links = append(links, l)
@@ -82,7 +82,7 @@ func (r *PostgresRepository) ByID(ctx context.Context, id int) (*Link, error) {
 	query := "SELECT * FROM links WHERE link_id = $1 LIMIT 1"
 	err := r.db.
 		QueryRowContext(ctx, query, id).
-		Scan(&res.ID, &res.Body, &res.CreatedAt)
+		Scan(&res.ID, &res.URL, &res.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("get by id:", apperr.ErrorLinkNotFound)
@@ -95,10 +95,10 @@ func (r *PostgresRepository) ByID(ctx context.Context, id int) (*Link, error) {
 func (r *PostgresRepository) ByURL(ctx context.Context, url string) (*Link, error) {
 	var res Link
 
-	query := "SELECT * FROM links WHERE link_body = $1 LIMIT 1"
+	query := "SELECT * FROM links WHERE url = $1 LIMIT 1"
 	err := r.db.
 		QueryRowContext(ctx, query, url).
-		Scan(&res.ID, &res.Body, &res.CreatedAt)
+		Scan(&res.ID, &res.URL, &res.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("get by url:", apperr.ErrorLinkNotFound)

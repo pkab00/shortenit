@@ -133,7 +133,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	link := res.Body
+	link := res.URL
 	log.Println("redirecting to", link)
 	http.Redirect(w, r, link, http.StatusFound)
 }

@@ -6,7 +6,7 @@ func (l *Link) toResponse() *LinkResponse {
 	encoder := encode.NewEncoder()
 	return &LinkResponse{
 		Code:      encoder.Encode(uint64(l.ID)),
-		Body:      l.Body,
+		URL:       l.URL,
 		CreatedAt: l.CreatedAt,
 	}
 }

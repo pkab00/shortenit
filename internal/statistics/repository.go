@@ -25,7 +25,7 @@ func (r *PostgresRepository) Get(ctx context.Context, id int) (*Statistics, erro
 	var err error
 	var res Statistics
 
-	query := "SELECT links.link_id, link_body, created_at, redirect_counter " +
+	query := "SELECT links.link_id, url, created_at, redirect_counter " +
 		"FROM links LEFT JOIN redirects ON links.link_id = redirects.link_id " +
 		"WHERE links.link_id = $1"
 
