@@ -9,6 +9,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/pkab00/shortenit/internal/db"
 	"github.com/pkab00/shortenit/internal/link"
+	"github.com/pkab00/shortenit/internal/middleware"
 )
 
 func main() {
@@ -25,5 +26,5 @@ func main() {
 	mux := http.NewServeMux()
 	link.RegisterRoutes(db, mux)
 
-	http.ListenAndServe(":8080", mux)
+	http.ListenAndServe(":8080", middleware.Logger(mux))
 }

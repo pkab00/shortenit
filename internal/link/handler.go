@@ -134,7 +134,6 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	link := res.URL
-	log.Println("redirecting to", link)
 	http.Redirect(w, r, link, http.StatusFound)
 }
 
