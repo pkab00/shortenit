@@ -19,7 +19,7 @@ type Handler struct {
 	statisticsService *statistics.Service
 }
 
-type LinkRequest struct {
+type CreateLinkRequest struct {
 	URL string `json:"url"`
 }
 
@@ -45,8 +45,18 @@ func (h *Handler) handleServerError(w http.ResponseWriter, err error) {
 	}
 }
 
+// Create godoc
+// @Summary Creates a new short code based on a provided link
+// @Accept json
+// @Produce json
+// @Param request body CreateLinkRequest true "URL"
+// @Success 200 {object} LinkResponse
+// @Success 201 {object} LinkResponse
+// @Failure 400
+// @Failure 500
+// @Router /shorten [post]
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	var req LinkRequest
+	var req CreateLinkRequest
 	var err error
 
 	err = json.NewDecoder(r.Body).Decode(&req)

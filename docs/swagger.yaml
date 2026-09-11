@@ -1,0 +1,51 @@
+basePath: /
+definitions:
+  link.CreateLinkRequest:
+    properties:
+      url:
+        type: string
+    type: object
+  link.LinkResponse:
+    properties:
+      created_at:
+        type: string
+      link_body:
+        type: string
+      link_code:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for URL shortening service
+  title: ShortenIt API
+  version: "1.0"
+paths:
+  /shorten:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: URL
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/link.CreateLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/link.LinkResponse'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/link.LinkResponse'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Creates a new short code based on a provided link
+swagger: "2.0"
