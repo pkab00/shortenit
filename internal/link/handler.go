@@ -36,7 +36,6 @@ func NewHandler(
 }
 
 func (h *Handler) handleServerError(w http.ResponseWriter, err error) {
-	log.Println("error getting record by code: ", err)
 	switch {
 	case errors.Is(err, apperr.ErrorLinkNotFound):
 		http.Error(w, "Link Not Found", http.StatusNotFound)
@@ -46,15 +45,16 @@ func (h *Handler) handleServerError(w http.ResponseWriter, err error) {
 }
 
 // Create godoc
-// @Summary Creates a new short code based on a provided link
-// @Accept json
-// @Produce json
-// @Param request body CreateLinkRequest true "URL"
-// @Success 200 {object} LinkResponse
-// @Success 201 {object} LinkResponse
-// @Failure 400
-// @Failure 500
-// @Router /shorten [post]
+//
+//	@Summary	Creates a new short code based on a provided link. If such a code already exists, returns an existing record.
+//	@Accept		json
+//	@Produce	json
+//	@Param		request	body		CreateLinkRequest	true	"URL"
+//	@Success	200		{object}	LinkResponse
+//	@Success	201		{object}	LinkResponse
+//	@Failure	400
+//	@Failure	500
+//	@Router		/shorten [post]
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateLinkRequest
 	var err error
@@ -85,6 +85,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res.Link)
 }
 
+// Create godoc
+//
+//	@Summary	Deletes a URL by its short code.
+//	@Produce	json
+//	@Success	200	{object}	LinkResponse
+//	@Failure	400
+//	@Failure	500
+//	@Router		/shorten/{code} [delete]
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	var err error
 
@@ -96,7 +104,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	res, err := h.linkService.Delete(ctx, code)
 	if err != nil {
 		log.Println("error deleting link: ", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		h.handleServerError(w, err)
 		return
 	}
 
@@ -105,6 +113,13 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// Create godoc
+//
+//	@Summary	Returns the list of all accessable URLs.
+//	@Produce	json
+//	@Success	200	{array}	LinkResponse
+//	@Failure	500
+//	@Router		/shorten [get]
 func (h *Handler) All(w http.ResponseWriter, r *http.Request) {
 	var err error
 
@@ -123,6 +138,13 @@ func (h *Handler) All(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// Create godoc
+//
+//	@Summary	Processes redirect to a URL by its short code.
+//	@Success	320
+//	@Failure	400
+//	@Failure	500
+//	@Router		/shorten/{code} [get]
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	var err error
 
@@ -132,6 +154,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.linkService.ByCode(ctx, code)
 	if err != nil {
+		log.Println("error getting record by code: ", err)
 		h.handleServerError(w, err)
 		return
 	}
@@ -147,6 +170,14 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, link, http.StatusFound)
 }
 
+// Create godoc
+//
+//	@Summary	Returns statistics related to a URL by its short code.
+//	@Produce	json
+//	@Success	200	{object}	statistics.StatisticsResponse
+//	@Failure	400
+//	@Failure	500
+//	@Router		/shorten/{code}/statistics [get]
 func (h *Handler) GetStatistics(w http.ResponseWriter, r *http.Request) {
 	var err error
 

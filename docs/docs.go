@@ -16,6 +16,26 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/shorten": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Returns the list of all accessable URLs.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/link.LinkResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
             "post": {
                 "consumes": [
                     "application/json"
@@ -23,7 +43,7 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Creates a new short code based on a provided link",
+                "summary": "Creates a new short code based on a provided link. If such a code already exists, returns an existing record.",
                 "parameters": [
                     {
                         "description": "URL",
@@ -46,6 +66,64 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/link.LinkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/shorten/{code}": {
+            "get": {
+                "summary": "Processes redirect to a URL by its short code.",
+                "responses": {
+                    "320": {
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Deletes a URL by its short code.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/link.LinkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/shorten/{code}/statistics": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Returns statistics related to a URL by its short code.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/statistics.StatisticsResponse"
                         }
                     },
                     "400": {
@@ -80,6 +158,23 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "statistics.StatisticsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "redirects_count": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
         }
     }
 }`
@@ -94,6 +189,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "REST API for URL shortening service",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {
