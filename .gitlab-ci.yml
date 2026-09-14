@@ -13,7 +13,7 @@ test-job:
   script:
     - echo "Running tests..."
     - sleep 20
-    - echo "Let's pretend that all tests succeed."
+    - echo "Let's pretend that all tests succeed..."
 
 deploy-job:
   stage: deploy
