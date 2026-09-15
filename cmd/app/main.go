@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -24,7 +25,11 @@ func main() {
 		log.Println("No .env file found, using environment variables")
 	}
 
-	db, err := db.NewDB(os.Getenv("DB_URL"))
+	url := fmt.Sprintf(
+		"postgres://%s:%s@database:5432/%s?sslmode=disable",
+		os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"),
+	)
+	db, err := db.NewDB(url)
 	if err != nil {
 		log.Fatal(err)
 	}

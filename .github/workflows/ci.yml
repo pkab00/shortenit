@@ -57,20 +57,35 @@ jobs:
       - name: Push Docker image
         run: docker push ghcr.io/pkab00/shortenit:latest
 
-  deploy-test:
+  deploy:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # настройка соединения по SSH
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/github_actions_shortenit
           chmod 600 ~/.ssh/github_actions_shortenit
 
-      - name: Test SSH connection
+      # перед деплоем необходимо перенести compose файл и миграции бд на сервер
+      - name: Copy files via SSH
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ vars.SERVER_HOST }}
+          username: ${{ vars.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml,internal/db/migrations/"
+          target: "~/shortenit"
+
+      # непосредственно деплой
+      - name: Deploy to VPS
         run: |
           ssh -o StrictHostKeyChecking=no \
             -i ~/.ssh/github_actions_shortenit \
             ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} \
-            "docker --version"
+            "cd ~/shortenit && docker compose pull && docker compose up -d"
