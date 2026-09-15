@@ -1,13 +1,18 @@
-name: CI
+name: Go CI Workflow
 
 on:
   push:
-    branches:
-      - master
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
+
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macOS-latest ]
 
     steps:
       - name: Checkout
@@ -19,4 +24,16 @@ jobs:
           go-version: '1.27'
 
       - name: Test
-        run: echo "Let's pretend we are testing something"
+        run: 
+          echo "Let's pretend we are testing something"
+          sleep 20
+          echo "Testing done"
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag shortenit:$(date +%s)
