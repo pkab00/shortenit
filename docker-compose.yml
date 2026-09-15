@@ -24,22 +24,22 @@ services:
       - ./internal/db/migrations:/migrations
     command:
       - "-path=/migrations"
-      - "-database=postgres://postgres:postgres@database:5432/main?sslmode=disable"
+      - "-database=postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${DB_NAME}?sslmode=disable"
       - "up"
     depends_on:
       database:
         condition: service_healthy
 
   api:
+    image: ghcr.io/pkab00/shortenit:latest
     container_name: shortenit-api
-    build: .
     ports:
       - 8080:8080
     environment:
-      - DB_URL=postgres://postgres:postgres@database:5432/main?sslmode=disable
+      DB_URL: postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${DB_NAME}?sslmode=disable
     depends_on:
       migrate:
-        condition: service_completed_successfully      
+        condition: service_completed_successfully
 
 volumes:
   db-data:

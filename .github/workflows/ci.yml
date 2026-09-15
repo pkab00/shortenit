@@ -56,3 +56,21 @@ jobs:
 
       - name: Push Docker image
         run: docker push ghcr.io/pkab00/shortenit:latest
+
+  deploy-test:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/github_actions_shortenit
+          chmod 600 ~/.ssh/github_actions_shortenit
+
+      - name: Test SSH connection
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+            -i ~/.ssh/github_actions_shortenit \
+            ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} \
+            "docker --version"
