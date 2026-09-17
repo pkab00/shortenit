@@ -7,6 +7,7 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
+	go.uber.org/mock v0.6.0
 )
 
 require (
