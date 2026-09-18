@@ -4,8 +4,6 @@ import (
 	"context"
 	"log"
 	"net/url"
-
-	"github.com/pkab00/shortenit/pkg/encode"
 )
 
 type CreateResult struct {
@@ -65,12 +63,7 @@ func (s *Service) Create(ctx context.Context, url string) (*CreateResult, error)
 func (s *Service) Delete(ctx context.Context, code string) (*LinkResponse, error) {
 	var err error
 
-	id, err := encode.NewDecoder().Decode(code)
-	if err != nil {
-		return nil, err
-	}
-
-	link, err := s.repo.Delete(ctx, *id)
+	link, err := s.repo.Delete(ctx, code)
 	if err != nil {
 		return nil, err
 	}
@@ -94,12 +87,7 @@ func (s *Service) All(ctx context.Context) ([]LinkResponse, error) {
 func (s *Service) ByCode(ctx context.Context, code string) (*LinkResponse, error) {
 	var err error
 
-	id, err := encode.NewDecoder().Decode(code)
-	if err != nil {
-		return nil, err
-	}
-
-	link, err := s.repo.ByID(ctx, *id)
+	link, err := s.repo.ByCode(ctx, code)
 	if err != nil {
 		return nil, err
 	}

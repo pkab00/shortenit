@@ -7,13 +7,14 @@ import (
 	"fmt"
 
 	"github.com/pkab00/shortenit/internal/apperr"
+	"github.com/pkab00/shortenit/pkg/encode"
 )
 
 type Repository interface {
 	Create(ctx context.Context, url string) (*Link, error)
-	Delete(ctx context.Context, id int) (*Link, error)
+	Delete(ctx context.Context, code string) (*Link, error)
 	All(ctx context.Context) ([]Link, error)
-	ByID(ctx context.Context, id int) (*Link, error)
+	ByCode(ctx context.Context, code string) (*Link, error)
 	ByURL(ctx context.Context, url string) (*Link, error)
 }
 
@@ -27,24 +28,50 @@ func NewRepository(db *sql.DB) *PostgresRepository {
 
 func (r *PostgresRepository) Create(ctx context.Context, url string) (*Link, error) {
 	var res Link
+	var query string
+	var err error
 
-	query := "INSERT INTO links (url) VALUES ($1) RETURNING *"
-	err := r.db.
-		QueryRowContext(ctx, query, url).
-		Scan(&res.ID, &res.URL, &res.CreatedAt)
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create link: %w", err)
 	}
+	defer tx.Rollback()
+
+	var id int
+	query = "SELECT nextval('links_link_id_seq')"
+	err = tx.
+		QueryRowContext(ctx, query).
+		Scan(&id)
+	if err != nil {
+		return nil, fmt.Errorf("create link: %w", err)
+	}
+
+	code := encode.NewHashEncoder().Encode(uint64(id))
+	err = tx.
+		QueryRowContext(ctx, `
+    	INSERT INTO links (link_id, link_code, url)
+		VALUES ($1, $2, $3)
+		RETURNING *
+	`, id, code, url).
+		Scan(&res.ID, &res.Code, &res.URL, &res.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("create link: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("create link: %w", err)
+	}
+
 	return &res, nil
 }
 
-func (r *PostgresRepository) Delete(ctx context.Context, id int) (*Link, error) {
+func (r *PostgresRepository) Delete(ctx context.Context, code string) (*Link, error) {
 	var res Link
 
-	query := "DELETE FROM links WHERE link_id = $1 RETURNING *"
+	query := "DELETE FROM links WHERE link_code = $1 RETURNING *"
 	err := r.db.
-		QueryRowContext(ctx, query, id).
-		Scan(&res.ID, &res.URL, &res.CreatedAt)
+		QueryRowContext(ctx, query, code).
+		Scan(&res.ID, &res.Code, &res.URL, &res.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("get by id: %w", apperr.ErrorLinkNotFound)
@@ -66,7 +93,7 @@ func (r *PostgresRepository) All(ctx context.Context) ([]Link, error) {
 
 	for rows.Next() {
 		var l Link
-		if err := rows.Scan(&l.ID, &l.URL, &l.CreatedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.Code, &l.URL, &l.CreatedAt); err != nil {
 			return nil, fmt.Errorf("get all links: %w", err)
 		}
 		links = append(links, l)
@@ -79,18 +106,18 @@ func (r *PostgresRepository) All(ctx context.Context) ([]Link, error) {
 	return links, nil
 }
 
-func (r *PostgresRepository) ByID(ctx context.Context, id int) (*Link, error) {
+func (r *PostgresRepository) ByCode(ctx context.Context, code string) (*Link, error) {
 	var res Link
 
-	query := "SELECT * FROM links WHERE link_id = $1 LIMIT 1"
+	query := "SELECT * FROM links WHERE link_code = $1 LIMIT 1"
 	err := r.db.
-		QueryRowContext(ctx, query, id).
-		Scan(&res.ID, &res.URL, &res.CreatedAt)
+		QueryRowContext(ctx, query, code).
+		Scan(&res.ID, &res.Code, &res.URL, &res.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("get by id: %w", apperr.ErrorLinkNotFound)
+			return nil, fmt.Errorf("get by code: %w", apperr.ErrorLinkNotFound)
 		}
-		return nil, fmt.Errorf("get by id: %w", err)
+		return nil, fmt.Errorf("get by code: %w", err)
 	}
 	return &res, nil
 }

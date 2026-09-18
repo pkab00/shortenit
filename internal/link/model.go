@@ -7,7 +7,8 @@ type LinkResponse struct {
 }
 
 type Link struct {
-	ID        int    `json:"link_id"`
-	URL       string `json:"link_body"`
-	CreatedAt string `json:"created_at"`
+	ID        int
+	Code      string
+	URL       string
+	CreatedAt string
 }

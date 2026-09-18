@@ -1,7 +1,5 @@
 package statistics
 
-import "github.com/pkab00/shortenit/pkg/encode"
-
 func (s *Statistics) toResponse() *StatisticsResponse {
 	var rCount int
 
@@ -11,10 +9,8 @@ func (s *Statistics) toResponse() *StatisticsResponse {
 		rCount = *s.Redirects
 	}
 
-	code := encode.NewEncoder().Encode(uint64(s.ID))
-
 	return &StatisticsResponse{
-		Code:      code,
+		Code:      s.Code,
 		URL:       s.URL,
 		CreatedAt: s.CreatedAt,
 		Redirects: rCount,

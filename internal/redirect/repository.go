@@ -7,7 +7,7 @@ import (
 )
 
 type Repository interface {
-	Increment(ctx context.Context, linkID int) (*Redirect, error)
+	Increment(ctx context.Context, code string) (*Redirect, error)
 }
 
 type PostgresRepository struct {
@@ -18,15 +18,34 @@ func NewRepository(db *sql.DB) *PostgresRepository {
 	return &PostgresRepository{db: db}
 }
 
-func (r *PostgresRepository) Increment(ctx context.Context, linkID int) (*Redirect, error) {
+func (r *PostgresRepository) Increment(ctx context.Context, code string) (*Redirect, error) {
 	var err error
 	var res Redirect
+	var query string
 
-	query := "SELECT * FROM increment_redirect_counter ($1)"
-	err = r.db.QueryRowContext(ctx, query, linkID).
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("increment redirect counter: ", err)
+	}
+	defer tx.Commit()
+
+	var id int
+	query = "SELECT link_id FROM links WHERE linK_code = $1"
+	err = tx.QueryRowContext(ctx, query, code).Scan(&id)
+	if err != nil {
+		return nil, fmt.Errorf("increment redirect counter: ", err)
+	}
+
+	query = "SELECT * FROM increment_redirect_counter ($1)"
+	err = r.db.QueryRowContext(ctx, query, id).
 		Scan(&res.ID, &res.LinkID, &res.Counter)
 	if err != nil {
 		return nil, fmt.Errorf("increment redirect counter: ", err)
 	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("increment redirect counter: ", err)
+	}
+
 	return &res, nil
 }
