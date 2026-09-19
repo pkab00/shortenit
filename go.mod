@@ -3,8 +3,10 @@ module github.com/pkab00/shortenit
 go 1.27.1
 
 require (
+	github.com/go-openapi/testify/v2 v2.8.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.12.3
+	github.com/speps/go-hashids v2.0.0+incompatible
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
 	go.uber.org/mock v0.6.0

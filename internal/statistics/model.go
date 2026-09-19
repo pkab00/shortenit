@@ -2,6 +2,7 @@ package statistics
 
 type Statistics struct {
 	ID        int
+	Code      string
 	URL       string
 	CreatedAt string
 	Redirects *int

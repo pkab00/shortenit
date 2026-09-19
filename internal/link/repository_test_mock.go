@@ -55,19 +55,19 @@ func (mr *MockRepositoryMockRecorder) All(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "All", reflect.TypeOf((*MockRepository)(nil).All), ctx)
 }
 
-// ByID mocks base method.
-func (m *MockRepository) ByID(ctx context.Context, id int) (*Link, error) {
+// ByCode mocks base method.
+func (m *MockRepository) ByCode(ctx context.Context, code string) (*Link, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ByID", ctx, id)
+	ret := m.ctrl.Call(m, "ByCode", ctx, code)
 	ret0, _ := ret[0].(*Link)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ByID indicates an expected call of ByID.
-func (mr *MockRepositoryMockRecorder) ByID(ctx, id any) *gomock.Call {
+// ByCode indicates an expected call of ByCode.
+func (mr *MockRepositoryMockRecorder) ByCode(ctx, code any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ByID", reflect.TypeOf((*MockRepository)(nil).ByID), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ByCode", reflect.TypeOf((*MockRepository)(nil).ByCode), ctx, code)
 }
 
 // ByURL mocks base method.
@@ -101,16 +101,16 @@ func (mr *MockRepositoryMockRecorder) Create(ctx, url any) *gomock.Call {
 }
 
 // Delete mocks base method.
-func (m *MockRepository) Delete(ctx context.Context, id int) (*Link, error) {
+func (m *MockRepository) Delete(ctx context.Context, code string) (*Link, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	ret := m.ctrl.Call(m, "Delete", ctx, code)
 	ret0, _ := ret[0].(*Link)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) Delete(ctx, code any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRepository)(nil).Delete), ctx, code)
 }

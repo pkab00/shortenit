@@ -2,8 +2,6 @@ package statistics
 
 import (
 	"context"
-
-	"github.com/pkab00/shortenit/pkg/encode"
 )
 
 type Service struct {
@@ -17,12 +15,7 @@ func NewService(repo *PostgresRepository) *Service {
 func (s *Service) Get(ctx context.Context, code string) (*StatisticsResponse, error) {
 	var err error
 
-	id, err := encode.NewDecoder().Decode(code)
-	if err != nil {
-		return nil, err
-	}
-
-	stat, err := s.repo.Get(ctx, *id)
+	stat, err := s.repo.Get(ctx, code)
 	if err != nil {
 		return nil, err
 	}

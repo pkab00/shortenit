@@ -4,8 +4,9 @@ import (
 	"context"
 	"log"
 	"net/url"
+	"strings"
 
-	"github.com/pkab00/shortenit/pkg/encode"
+	"github.com/pkab00/shortenit/internal/apperr"
 )
 
 type CreateResult struct {
@@ -39,6 +40,10 @@ func fixURL(url_str string) (*string, error) {
 func (s *Service) Create(ctx context.Context, url string) (*CreateResult, error) {
 	var err error
 
+	if strings.TrimSpace(url) == "" {
+		return nil, apperr.ErrorEmptyCreateRequest
+	}
+
 	fixedUrl, err := fixURL(url)
 	if err != nil {
 		return nil, err
@@ -65,12 +70,7 @@ func (s *Service) Create(ctx context.Context, url string) (*CreateResult, error)
 func (s *Service) Delete(ctx context.Context, code string) (*LinkResponse, error) {
 	var err error
 
-	id, err := encode.NewDecoder().Decode(code)
-	if err != nil {
-		return nil, err
-	}
-
-	link, err := s.repo.Delete(ctx, *id)
+	link, err := s.repo.Delete(ctx, code)
 	if err != nil {
 		return nil, err
 	}
@@ -94,12 +94,7 @@ func (s *Service) All(ctx context.Context) ([]LinkResponse, error) {
 func (s *Service) ByCode(ctx context.Context, code string) (*LinkResponse, error) {
 	var err error
 
-	id, err := encode.NewDecoder().Decode(code)
-	if err != nil {
-		return nil, err
-	}
-
-	link, err := s.repo.ByID(ctx, *id)
+	link, err := s.repo.ByCode(ctx, code)
 	if err != nil {
 		return nil, err
 	}
