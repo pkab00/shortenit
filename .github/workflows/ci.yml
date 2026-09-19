@@ -25,9 +25,7 @@ jobs:
 
       - name: Test
         run: 
-          echo "Let's pretend we are testing something"
-          sleep 20
-          echo "Testing done"
+          go test -v -race -cover ./...
 
   build:
     needs: test

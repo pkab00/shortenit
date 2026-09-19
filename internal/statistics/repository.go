@@ -34,9 +34,9 @@ func (r *PostgresRepository) Get(ctx context.Context, code string) (*Statistics,
 		Scan(&res.ID, &res.Code, &res.URL, &res.CreatedAt, &res.Redirects)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("get by statistics:", apperr.ErrorLinkNotFound)
+			return nil, fmt.Errorf("get by statistics: %w", apperr.ErrorLinkNotFound)
 		}
-		return nil, fmt.Errorf("get statistics:", err)
+		return nil, fmt.Errorf("get statistics: %w", err)
 	}
 	return &res, nil
 }

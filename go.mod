@@ -3,10 +3,13 @@ module github.com/pkab00/shortenit
 go 1.27.1
 
 require (
+	github.com/go-openapi/testify/v2 v2.8.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.12.3
+	github.com/speps/go-hashids v2.0.0+incompatible
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
+	go.uber.org/mock v0.6.0
 )
 
 require (
@@ -21,7 +24,6 @@ require (
 	github.com/go-openapi/swag/stringutils v0.29.2 // indirect
 	github.com/go-openapi/swag/typeutils v0.29.2 // indirect
 	github.com/go-openapi/swag/yamlutils v0.29.2 // indirect
-	github.com/speps/go-hashids v2.0.0+incompatible // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/mod v0.41.0 // indirect

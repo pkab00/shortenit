@@ -4,6 +4,9 @@ import (
 	"context"
 	"log"
 	"net/url"
+	"strings"
+
+	"github.com/pkab00/shortenit/internal/apperr"
 )
 
 type CreateResult struct {
@@ -36,6 +39,10 @@ func fixURL(url_str string) (*string, error) {
 
 func (s *Service) Create(ctx context.Context, url string) (*CreateResult, error) {
 	var err error
+
+	if strings.TrimSpace(url) == "" {
+		return nil, apperr.ErrorEmptyCreateRequest
+	}
 
 	fixedUrl, err := fixURL(url)
 	if err != nil {
