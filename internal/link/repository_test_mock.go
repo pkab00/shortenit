@@ -86,18 +86,18 @@ func (mr *MockRepositoryMockRecorder) ByURL(ctx, url any) *gomock.Call {
 }
 
 // Create mocks base method.
-func (m *MockRepository) Create(ctx context.Context, url string) (*Link, error) {
+func (m *MockRepository) Create(ctx context.Context, url string, code *string) (*Link, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, url)
+	ret := m.ctrl.Call(m, "Create", ctx, url, code)
 	ret0, _ := ret[0].(*Link)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockRepositoryMockRecorder) Create(ctx, url any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) Create(ctx, url, code any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockRepository)(nil).Create), ctx, url)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockRepository)(nil).Create), ctx, url, code)
 }
 
 // Delete mocks base method.

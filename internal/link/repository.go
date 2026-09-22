@@ -11,7 +11,7 @@ import (
 )
 
 type Repository interface {
-	Create(ctx context.Context, url string) (*Link, error)
+	Create(ctx context.Context, url string, code *string) (*Link, error)
 	Delete(ctx context.Context, code string) (*Link, error)
 	All(ctx context.Context) ([]Link, error)
 	ByCode(ctx context.Context, code string) (*Link, error)
@@ -26,10 +26,11 @@ func NewRepository(db *sql.DB) *PostgresRepository {
 	return &PostgresRepository{db: db}
 }
 
-func (r *PostgresRepository) Create(ctx context.Context, url string) (*Link, error) {
+func (r *PostgresRepository) Create(ctx context.Context, url string, code *string) (*Link, error) {
 	var res Link
 	var query string
 	var err error
+	var usingCode string
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -46,13 +47,17 @@ func (r *PostgresRepository) Create(ctx context.Context, url string) (*Link, err
 		return nil, fmt.Errorf("create link: %w", err)
 	}
 
-	code := encode.NewHashEncoder().Encode(uint64(id))
+	if code == nil {
+		usingCode = encode.NewHashEncoder().Encode(uint64(id))
+	} else {
+		usingCode = *code
+	}
 	err = tx.
 		QueryRowContext(ctx, `
     	INSERT INTO links (link_id, link_code, url)
 		VALUES ($1, $2, $3)
 		RETURNING *
-	`, id, code, url).
+	`, id, usingCode, url).
 		Scan(&res.ID, &res.Code, &res.URL, &res.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("create link: %w", err)

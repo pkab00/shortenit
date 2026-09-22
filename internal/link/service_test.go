@@ -15,21 +15,21 @@ import (
 func TestCreate(t *testing.T) {
 	tests := []struct {
 		name      string
-		url       string
+		req       *link.CreateLinkRequest
 		want      *link.CreateResult
 		wantError bool
 		setupMock func(repo *link.MockRepository)
 	}{
 		{
 			name:      "empty url",
-			url:       "",
+			req:       &link.CreateLinkRequest{URL: ""},
 			want:      nil,
 			wantError: true,
 			setupMock: func(repo *link.MockRepository) {},
 		},
 		{
 			name: "valid url",
-			url:  "www.google.com",
+			req:  &link.CreateLinkRequest{URL: "www.google.com"},
 			want: &link.CreateResult{
 				Created: true,
 				Link: &link.LinkResponse{
@@ -42,13 +42,13 @@ func TestCreate(t *testing.T) {
 					ByURL(t.Context(), "https://www.google.com").
 					Return(nil, apperr.ErrorLinkNotFound)
 				repo.EXPECT().
-					Create(t.Context(), "https://www.google.com").
+					Create(t.Context(), "https://www.google.com", gomock.Any()).
 					Return(&link.Link{URL: "https://www.google.com"}, nil)
 			},
 		},
 		{
 			name: "existing url",
-			url:  "www.google.com",
+			req:  &link.CreateLinkRequest{URL: "www.google.com"},
 			want: &link.CreateResult{
 				Created: false,
 				Link: &link.LinkResponse{
@@ -72,7 +72,7 @@ func TestCreate(t *testing.T) {
 
 			testcase.setupMock(repo)
 
-			got, err := serv.Create(t.Context(), testcase.url)
+			got, err := serv.Create(t.Context(), testcase.req)
 
 			if testcase.wantError {
 				if err == nil {

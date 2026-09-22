@@ -70,7 +70,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	res, err := h.linkService.Create(ctx, req.URL)
+	res, err := h.linkService.Create(ctx, &req)
 	if err != nil {
 		log.Println("error creating new link: ", err)
 		if errors.Is(err, apperr.ErrorInvalidCreateRequest) {
