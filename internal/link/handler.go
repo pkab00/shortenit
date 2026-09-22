@@ -20,7 +20,8 @@ type Handler struct {
 }
 
 type CreateLinkRequest struct {
-	URL string `json:"url"`
+	URL  string  `json:"url"`
+	Code *string `json:"code"`
 }
 
 func NewHandler(
@@ -49,7 +50,7 @@ func (h *Handler) handleServerError(w http.ResponseWriter, err error) {
 //	@Summary	Creates a new short code based on a provided link. If such a code already exists, returns an existing record.
 //	@Accept		json
 //	@Produce	json
-//	@Param		request	body		CreateLinkRequest	true	"URL"
+//	@Param		request	body		CreateLinkRequest	true	"Create request"
 //	@Success	200		{object}	LinkResponse
 //	@Success	201		{object}	LinkResponse
 //	@Failure	400
@@ -72,7 +73,11 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	res, err := h.linkService.Create(ctx, req.URL)
 	if err != nil {
 		log.Println("error creating new link: ", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		if errors.Is(err, apperr.ErrorInvalidCreateRequest) {
+			http.Error(w, "Bad Create Request", http.StatusBadRequest)
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 		return
 	}
 

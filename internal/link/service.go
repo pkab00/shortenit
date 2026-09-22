@@ -41,7 +41,7 @@ func (s *Service) Create(ctx context.Context, url string) (*CreateResult, error)
 	var err error
 
 	if strings.TrimSpace(url) == "" {
-		return nil, apperr.ErrorEmptyCreateRequest
+		return nil, apperr.ErrorInvalidCreateRequest
 	}
 
 	fixedUrl, err := fixURL(url)
