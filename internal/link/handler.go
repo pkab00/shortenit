@@ -73,9 +73,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	res, err := h.linkService.Create(ctx, &req)
 	if err != nil {
 		log.Println("error creating new link: ", err)
-		if errors.Is(err, apperr.ErrorInvalidCreateRequest) {
+		switch {
+		case errors.Is(err, apperr.ErrorInvalidCreateRequest):
 			http.Error(w, "Bad Create Request", http.StatusBadRequest)
-		} else {
+		case errors.Is(err, apperr.ErrorInvalidCustomCode):
+			http.Error(w, "Invalid Custom Code", http.StatusBadRequest)
+		case errors.Is(err, apperr.ErrorCustomCodeInUse):
+			http.Error(w, "The Custom Code Reserved", http.StatusBadRequest)
+		default:
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 		return
