@@ -1,5 +1,6 @@
 package main
 
+//go:generate swag init
 import (
 	"log"
 	"net/http"

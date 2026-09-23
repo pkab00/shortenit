@@ -12,54 +12,130 @@ import (
 
 //go:generate mockgen -destination=repository_test_mock.go -source=repository.go -package=link
 
+func createMinimalRequest(url string) *link.CreateLinkRequest {
+	return &link.CreateLinkRequest{
+		URL:  url,
+		Code: nil,
+	}
+}
+
+func createRequestWithCode(url string, code string) *link.CreateLinkRequest {
+	codeAdr := &code
+	return &link.CreateLinkRequest{
+		URL:  url,
+		Code: codeAdr,
+	}
+}
+
 func TestCreate(t *testing.T) {
+	const (
+		GOOGLE_URL       = "www.google.com"
+		GOOGLE_FIXED_URL = "https://www.google.com"
+		GOOGLE_CODE      = "google"
+	)
 	tests := []struct {
 		name      string
-		url       string
+		req       *link.CreateLinkRequest
 		want      *link.CreateResult
 		wantError bool
 		setupMock func(repo *link.MockRepository)
 	}{
 		{
 			name:      "empty url",
-			url:       "",
+			req:       createMinimalRequest(""),
 			want:      nil,
 			wantError: true,
 			setupMock: func(repo *link.MockRepository) {},
 		},
 		{
 			name: "valid url",
-			url:  "www.google.com",
+			req:  createMinimalRequest(GOOGLE_URL),
 			want: &link.CreateResult{
 				Created: true,
 				Link: &link.LinkResponse{
-					URL: "https://www.google.com",
+					URL: GOOGLE_FIXED_URL,
 				},
 			},
 			wantError: false,
 			setupMock: func(repo *link.MockRepository) {
 				repo.EXPECT().
-					ByURL(t.Context(), "https://www.google.com").
+					ByURL(t.Context(), GOOGLE_FIXED_URL).
 					Return(nil, apperr.ErrorLinkNotFound)
 				repo.EXPECT().
-					Create(t.Context(), "https://www.google.com").
-					Return(&link.Link{URL: "https://www.google.com"}, nil)
+					Create(t.Context(), GOOGLE_FIXED_URL, gomock.Any()).
+					Return(&link.Link{URL: GOOGLE_FIXED_URL}, nil)
 			},
 		},
 		{
 			name: "existing url",
-			url:  "www.google.com",
+			req:  createMinimalRequest(GOOGLE_URL),
 			want: &link.CreateResult{
 				Created: false,
 				Link: &link.LinkResponse{
-					URL: "https://www.google.com",
+					URL: GOOGLE_FIXED_URL,
 				},
 			},
 			wantError: false,
 			setupMock: func(repo *link.MockRepository) {
 				repo.EXPECT().
-					ByURL(t.Context(), "https://www.google.com").
-					Return(&link.Link{URL: "https://www.google.com"}, nil)
+					ByURL(t.Context(), GOOGLE_FIXED_URL).
+					Return(&link.Link{URL: GOOGLE_FIXED_URL}, nil)
+			},
+		},
+		{
+			name:      "empty custom code",
+			req:       createRequestWithCode(GOOGLE_URL, ""),
+			want:      nil,
+			wantError: true,
+			setupMock: func(repo *link.MockRepository) {
+				repo.EXPECT().
+					ByURL(t.Context(), gomock.Any()).
+					Return(nil, apperr.ErrorLinkNotFound)
+			},
+		},
+		{
+			name:      "long custom code",
+			req:       createRequestWithCode(GOOGLE_URL, "gooooooooooooooooogle"),
+			want:      nil,
+			wantError: true,
+			setupMock: func(repo *link.MockRepository) {
+				repo.EXPECT().
+					ByURL(t.Context(), gomock.Any()).
+					Return(nil, apperr.ErrorLinkNotFound)
+			},
+		},
+		{
+			name:      "reserved custom code",
+			req:       createRequestWithCode(GOOGLE_URL, "shortenit"),
+			want:      nil,
+			wantError: true,
+			setupMock: func(repo *link.MockRepository) {
+				repo.EXPECT().
+					ByURL(t.Context(), gomock.Any()).
+					Return(nil, apperr.ErrorLinkNotFound)
+			},
+		},
+		{
+			name: "valid custom code",
+			req:  createRequestWithCode(GOOGLE_URL, GOOGLE_CODE),
+			want: &link.CreateResult{
+				Created: true,
+				Link: &link.LinkResponse{
+					URL:  GOOGLE_FIXED_URL,
+					Code: GOOGLE_CODE,
+				},
+			},
+			wantError: false,
+			setupMock: func(repo *link.MockRepository) {
+				repo.EXPECT().
+					ByURL(t.Context(), gomock.Any()).
+					Return(nil, apperr.ErrorLinkNotFound)
+				repo.EXPECT().
+					ByCode(t.Context(), GOOGLE_CODE).
+					Return(nil, apperr.ErrorLinkNotFound)
+				repo.EXPECT().
+					Create(t.Context(), GOOGLE_FIXED_URL, gomock.Any()).
+					Return(&link.Link{URL: GOOGLE_FIXED_URL, Code: GOOGLE_CODE}, nil)
 			},
 		},
 	}
@@ -72,7 +148,7 @@ func TestCreate(t *testing.T) {
 
 			testcase.setupMock(repo)
 
-			got, err := serv.Create(t.Context(), testcase.url)
+			got, err := serv.Create(t.Context(), testcase.req)
 
 			if testcase.wantError {
 				if err == nil {
