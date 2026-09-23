@@ -5,6 +5,6 @@ import "errors"
 var (
 	ErrorLinkNotFound         = errors.New("link not found")
 	ErrorInvalidCreateRequest = errors.New("invalid create request")
-	ErrorCustomCodeTooLong    = errors.New("custom code is too long")
+	ErrorInvalidCustomCode    = errors.New("invalid custom code")
 	ErrorCustomCodeInUse      = errors.New("custom code is already in use")
 )
