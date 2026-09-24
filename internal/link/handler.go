@@ -13,15 +13,31 @@ import (
 	"github.com/pkab00/shortenit/internal/statistics"
 )
 
-type Handler struct {
-	linkService       *Service
-	redirectService   *redirect.Service
-	statisticsService *statistics.Service
+type LinkResponse struct {
+	Code      string `json:"link_code"`
+	URL       string `json:"url"`
+	CreatedAt string `json:"created_at"`
+}
+
+type LinkErrorResponse struct {
+	URL          string `json:"url"`
+	ErrorMessage string `json:"error_message"`
+}
+
+type CreateManyResponse struct {
+	Success []LinkResponse      `json:"success"`
+	Failure []LinkErrorResponse `json:"failure"`
 }
 
 type CreateLinkRequest struct {
 	URL  string  `json:"url"`
 	Code *string `json:"code"`
+}
+
+type Handler struct {
+	linkService       *Service
+	redirectService   *redirect.Service
+	statisticsService *statistics.Service
 }
 
 func NewHandler(
@@ -45,24 +61,12 @@ func (h *Handler) handleServerError(w http.ResponseWriter, err error) {
 	}
 }
 
-// Create godoc
-//
-//	@Summary	Creates a new short code based on a provided link. If such a code already exists, returns an existing record.
-//	@Accept		json
-//	@Produce	json
-//	@Param		request	body		CreateLinkRequest	true	"Create request"
-//	@Success	200		{object}	LinkResponse
-//	@Success	201		{object}	LinkResponse
-//	@Failure	400
-//	@Failure	500
-//	@Router		/shorten [post]
-func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createOne(w http.ResponseWriter, r *http.Request, body json.RawMessage) {
 	var req CreateLinkRequest
 	var err error
 
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		log.Println("error decoding create request: ", err)
+	if err := json.Unmarshal(body, &req); err != nil {
+		log.Println("error decoding request: ", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -92,7 +96,75 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
-	json.NewEncoder(w).Encode(res.Link)
+	json.NewEncoder(w).Encode(res.Response)
+}
+
+func (h *Handler) createMany(w http.ResponseWriter, r *http.Request, body json.RawMessage) {
+	var reqs []CreateLinkRequest
+	var success []LinkResponse
+	var failure []LinkErrorResponse
+	var response CreateManyResponse
+	var err error
+
+	if err := json.Unmarshal(body, &reqs); err != nil {
+		log.Println("error decoding request: ", err)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+
+	results := h.linkService.CreateMany(ctx, reqs)
+	for index, result := range results {
+		if result.Error != nil {
+			url := reqs[index].URL
+			err = result.Error
+			failure = append(failure, LinkErrorResponse{URL: url, ErrorMessage: err.Error()})
+		} else {
+			success = append(success, *result.Response)
+		}
+	}
+	if len(success) == 0 && len(failure) > 0 {
+		log.Println("all create operations failed")
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	response = CreateManyResponse{
+		Success: success,
+		Failure: failure,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// Create godoc
+//
+//	@Summary	Creates a new short code based on a provided link. If such a code already exists, returns an existing record.
+//	@Accept		json
+//	@Produce	json
+//	@Param		request	body		CreateLinkRequest	true	"Create request"
+//	@Success	200		{object}	LinkResponse
+//	@Success	201		{object}	LinkResponse
+//	@Failure	400
+//	@Failure	500
+//	@Router		/shorten [post]
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+	var body json.RawMessage
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	switch body[0] {
+	case '[':
+		h.createMany(w, r, body)
+	default:
+		h.createOne(w, r, body)
+	}
 }
 
 // Create godoc

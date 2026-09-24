@@ -14,8 +14,9 @@ import (
 )
 
 type CreateResult struct {
-	Link    *LinkResponse
-	Created bool
+	Response *LinkResponse
+	Created  bool
+	Error    error
 }
 
 type Service struct {
@@ -78,8 +79,8 @@ func (s *Service) Create(ctx context.Context, req *CreateLinkRequest) (*CreateRe
 	foundByURL, _ := s.repo.ByURL(ctx, *fixedUrl)
 	if foundByURL != nil {
 		return &CreateResult{
-			Link:    foundByURL.toResponse(),
-			Created: false,
+			Response: foundByURL.toResponse(),
+			Created:  false,
 		}, nil
 	}
 
@@ -97,9 +98,28 @@ func (s *Service) Create(ctx context.Context, req *CreateLinkRequest) (*CreateRe
 		return nil, err
 	}
 	return &CreateResult{
-		Link:    link.toResponse(),
-		Created: true,
+		Response: link.toResponse(),
+		Created:  true,
 	}, nil
+}
+
+func (s *Service) CreateMany(ctx context.Context, reqs []CreateLinkRequest) []CreateResult {
+	var results []CreateResult
+
+	for _, req := range reqs {
+		res, err := s.Create(ctx, &req)
+		if err == nil {
+			results = append(results, *res)
+		} else {
+			failureRes := CreateResult{
+				Response: nil,
+				Created:  false,
+				Error:    err,
+			}
+			results = append(results, failureRes)
+		}
+	}
+	return results
 }
 
 func (s *Service) Delete(ctx context.Context, code string) (*LinkResponse, error) {

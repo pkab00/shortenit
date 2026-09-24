@@ -52,7 +52,7 @@ func TestCreate(t *testing.T) {
 			req:  createMinimalRequest(GOOGLE_URL),
 			want: &link.CreateResult{
 				Created: true,
-				Link: &link.LinkResponse{
+				Response: &link.LinkResponse{
 					URL: GOOGLE_FIXED_URL,
 				},
 			},
@@ -71,7 +71,7 @@ func TestCreate(t *testing.T) {
 			req:  createMinimalRequest(GOOGLE_URL),
 			want: &link.CreateResult{
 				Created: false,
-				Link: &link.LinkResponse{
+				Response: &link.LinkResponse{
 					URL: GOOGLE_FIXED_URL,
 				},
 			},
@@ -120,7 +120,7 @@ func TestCreate(t *testing.T) {
 			req:  createRequestWithCode(GOOGLE_URL, GOOGLE_CODE),
 			want: &link.CreateResult{
 				Created: true,
-				Link: &link.LinkResponse{
+				Response: &link.LinkResponse{
 					URL:  GOOGLE_FIXED_URL,
 					Code: GOOGLE_CODE,
 				},
