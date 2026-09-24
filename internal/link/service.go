@@ -91,6 +91,11 @@ func (s *Service) Create(ctx context.Context, req *CreateLinkRequest) (*CreateRe
 			return nil, err
 		}
 		customCode = req.Code
+
+		link, _ := s.repo.ByCode(ctx, *customCode)
+		if link != nil {
+			return nil, apperr.ErrorCustomCodeInUse
+		}
 	}
 
 	link, err := s.repo.Create(ctx, *fixedUrl, customCode)

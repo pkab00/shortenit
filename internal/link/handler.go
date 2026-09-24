@@ -83,7 +83,7 @@ func (h *Handler) createOne(w http.ResponseWriter, r *http.Request, body json.Ra
 		case errors.Is(err, apperr.ErrorInvalidCustomCode):
 			http.Error(w, "Invalid Custom Code", http.StatusBadRequest)
 		case errors.Is(err, apperr.ErrorCustomCodeInUse):
-			http.Error(w, "The Custom Code Reserved", http.StatusBadRequest)
+			http.Error(w, "Custom Code In Use", http.StatusBadRequest)
 		default:
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
