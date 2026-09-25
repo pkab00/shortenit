@@ -57,10 +57,10 @@ func (s *Service) checkCustomCode(ctx context.Context, code string) error {
 	}
 
 	_, err := s.repo.ByCode(ctx, code)
-	if err == nil || errors.Is(err, apperr.ErrorLinkNotFound) {
+	if errors.Is(err, apperr.ErrorLinkNotFound) {
 		return nil
 	} else {
-		return fmt.Errorf("custom code error: %w", err)
+		return fmt.Errorf("custom code error: %w", apperr.ErrorCustomCodeInUse)
 	}
 }
 
@@ -91,11 +91,6 @@ func (s *Service) Create(ctx context.Context, req *CreateLinkRequest) (*CreateRe
 			return nil, err
 		}
 		customCode = req.Code
-
-		link, _ := s.repo.ByCode(ctx, *customCode)
-		if link != nil {
-			return nil, apperr.ErrorCustomCodeInUse
-		}
 	}
 
 	link, err := s.repo.Create(ctx, *fixedUrl, customCode)
