@@ -62,12 +62,24 @@ func (h *Handler) handleServerError(w http.ResponseWriter, err error) {
 	}
 }
 
-func (h *Handler) createOne(w http.ResponseWriter, r *http.Request, body json.RawMessage) {
+// Create godoc
+//
+//	@Summary	Creates a new short code based on a provided link. If such a code already exists, returns an existing record.
+//	@Accept		json
+//	@Produce	json
+//	@Param		request	body		CreateLinkRequest	true	"Create request"
+//	@Success	200		{object}	LinkResponse
+//	@Success	201		{object}	LinkResponse
+//	@Failure	400
+//	@Failure	500
+//	@Router		/shorten [post]
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateLinkRequest
 	var err error
 
-	if err := json.Unmarshal(body, &req); err != nil {
-		log.Println("error decoding request: ", err)
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		log.Println("error decoding create request: ", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -100,15 +112,25 @@ func (h *Handler) createOne(w http.ResponseWriter, r *http.Request, body json.Ra
 	json.NewEncoder(w).Encode(res.Response)
 }
 
-func (h *Handler) createMany(w http.ResponseWriter, r *http.Request, body json.RawMessage) {
+// Create godoc
+//
+//	@Summary	Creates multiple records. Returns all the requests grouped by the result as "succeess" and "failure".
+//	@Accept		json
+//	@Produce	json
+//	@Param		request	body		[]CreateLinkRequest	true	"Create request"
+//	@Success	200		{object}	CreateManyResponse
+//	@Failure	500		{object}	CreateManyResponse
+//	@Router		/shorten [post]
+func (h *Handler) CreateMany(w http.ResponseWriter, r *http.Request) {
 	var reqs []CreateLinkRequest
 	var success []LinkResponse
 	var failure []LinkErrorResponse
 	var response CreateManyResponse
 	var err error
 
-	if err := json.Unmarshal(body, &reqs); err != nil {
-		log.Println("error decoding request: ", err)
+	err = json.NewDecoder(r.Body).Decode(&reqs)
+	if err != nil {
+		log.Println("error decoding create request: ", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -148,33 +170,6 @@ func (h *Handler) createMany(w http.ResponseWriter, r *http.Request, body json.R
 		w.WriteHeader(http.StatusOK)
 	}
 	json.NewEncoder(w).Encode(response)
-}
-
-// Create godoc
-//
-//	@Summary	Creates a new short code based on a provided link. If such a code already exists, returns an existing record.
-//	@Accept		json
-//	@Produce	json
-//	@Param		request	body		CreateLinkRequest	true	"Create request"
-//	@Success	200		{object}	LinkResponse
-//	@Success	201		{object}	LinkResponse
-//	@Failure	400
-//	@Failure	500
-//	@Router		/shorten [post]
-func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	var body json.RawMessage
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
-	}
-
-	switch body[0] {
-	case '[':
-		h.createMany(w, r, body)
-	default:
-		h.createOne(w, r, body)
-	}
 }
 
 // Create godoc

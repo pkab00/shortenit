@@ -22,6 +22,7 @@ func RegisterRoutes(db *sql.DB, mux *http.ServeMux) {
 	)
 
 	mux.HandleFunc("POST /shorten", hand.Create)
+	mux.HandleFunc("POST /shorten/many", hand.CreateMany)
 	mux.HandleFunc("GET /shorten", hand.All)
 	mux.HandleFunc("DELETE /shorten/{code}", hand.Delete)
 	mux.HandleFunc("GET /shorten/{code}", hand.Redirect)
