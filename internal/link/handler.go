@@ -14,12 +14,13 @@ import (
 )
 
 type LinkResponse struct {
-	Code      string `json:"link_code"`
+	Code      string `json:"code"`
 	URL       string `json:"url"`
 	CreatedAt string `json:"created_at"`
 }
 
 type LinkErrorResponse struct {
+	Code         string `json:"code"`
 	URL          string `json:"url"`
 	ErrorMessage string `json:"error_message"`
 }
@@ -118,17 +119,20 @@ func (h *Handler) createMany(w http.ResponseWriter, r *http.Request, body json.R
 	results := h.linkService.CreateMany(ctx, reqs)
 	for index, result := range results {
 		if result.Error != nil {
+			code := reqs[index].Code
 			url := reqs[index].URL
 			err = result.Error
-			failure = append(failure, LinkErrorResponse{URL: url, ErrorMessage: err.Error()})
+			failure = append(
+				failure,
+				LinkErrorResponse{
+					Code:         *code,
+					URL:          url,
+					ErrorMessage: err.Error(),
+				},
+			)
 		} else {
 			success = append(success, *result.Response)
 		}
-	}
-	if len(success) == 0 && len(failure) > 0 {
-		log.Println("all create operations failed")
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
 	}
 
 	response = CreateManyResponse{
@@ -136,7 +140,13 @@ func (h *Handler) createMany(w http.ResponseWriter, r *http.Request, body json.R
 		Failure: failure,
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	if len(success) == 0 && len(failure) > 0 {
+		log.Println("all create operations failed")
+		w.WriteHeader(http.StatusInternalServerError)
+		// TODO: handler should not always return code 500
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
 	json.NewEncoder(w).Encode(response)
 }
 
