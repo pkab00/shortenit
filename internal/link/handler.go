@@ -13,15 +13,32 @@ import (
 	"github.com/pkab00/shortenit/internal/statistics"
 )
 
-type Handler struct {
-	linkService       *Service
-	redirectService   *redirect.Service
-	statisticsService *statistics.Service
+type LinkResponse struct {
+	Code      string `json:"code"`
+	URL       string `json:"url"`
+	CreatedAt string `json:"created_at"`
+}
+
+type LinkErrorResponse struct {
+	Code         string `json:"code"`
+	URL          string `json:"url"`
+	ErrorMessage string `json:"error_message"`
+}
+
+type CreateManyResponse struct {
+	Success []LinkResponse      `json:"success"`
+	Failure []LinkErrorResponse `json:"failure"`
 }
 
 type CreateLinkRequest struct {
 	URL  string  `json:"url"`
 	Code *string `json:"code"`
+}
+
+type Handler struct {
+	linkService       *Service
+	redirectService   *redirect.Service
+	statisticsService *statistics.Service
 }
 
 func NewHandler(
@@ -79,7 +96,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, apperr.ErrorInvalidCustomCode):
 			http.Error(w, "Invalid Custom Code", http.StatusBadRequest)
 		case errors.Is(err, apperr.ErrorCustomCodeInUse):
-			http.Error(w, "The Custom Code Reserved", http.StatusBadRequest)
+			http.Error(w, "Custom Code In Use", http.StatusBadRequest)
 		default:
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
@@ -92,7 +109,67 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
-	json.NewEncoder(w).Encode(res.Link)
+	json.NewEncoder(w).Encode(res.Response)
+}
+
+// Create godoc
+//
+//	@Summary	Creates multiple records. Returns all the requests grouped by the result as "succeess" and "failure".
+//	@Accept		json
+//	@Produce	json
+//	@Param		request	body		[]CreateLinkRequest	true	"Create request"
+//	@Success	200		{object}	CreateManyResponse
+//	@Failure	500		{object}	CreateManyResponse
+//	@Router		/shorten [post]
+func (h *Handler) CreateMany(w http.ResponseWriter, r *http.Request) {
+	var reqs []CreateLinkRequest
+	var success []LinkResponse
+	var failure []LinkErrorResponse
+	var response CreateManyResponse
+	var err error
+
+	err = json.NewDecoder(r.Body).Decode(&reqs)
+	if err != nil {
+		log.Println("error decoding create request: ", err)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+
+	results := h.linkService.CreateMany(ctx, reqs)
+	for index, result := range results {
+		if result.Error != nil {
+			code := reqs[index].Code
+			url := reqs[index].URL
+			err = result.Error
+			failure = append(
+				failure,
+				LinkErrorResponse{
+					Code:         *code,
+					URL:          url,
+					ErrorMessage: err.Error(),
+				},
+			)
+		} else {
+			success = append(success, *result.Response)
+		}
+	}
+
+	response = CreateManyResponse{
+		Success: success,
+		Failure: failure,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if len(success) == 0 && len(failure) > 0 {
+		log.Println("all create operations failed")
+		w.WriteHeader(http.StatusInternalServerError)
+		// TODO: handler should not always return code 500
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 // Create godoc
